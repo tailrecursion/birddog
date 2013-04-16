@@ -15,7 +15,7 @@
       (boolean (doto (java.net.Socket.)
                  (.connect (java.net.InetSocketAddress. ip port) timeout)
                  (.close)))
-      (catch Exception e false))))
+      (catch Throwable t false))))
 
 (defn cidr-info [cidr]
   (bean (.getInfo (doto (org.apache.commons.net.util.SubnetUtils. cidr)
@@ -33,7 +33,6 @@
                     id (str (System/getenv "HOME") "/.ssh/id_rsa")
                     check-host-key false
                     timeout-ms 0}}]
-  (assert (ipv4? ip))
   (let [jsch    (doto (com.jcraft.jsch.JSch.)
                   (.addIdentity id))
         session (doto (.getSession jsch user host port)
