@@ -26,44 +26,44 @@
     :db/fn add-machine}
 
    ;; processes
-   {:db/ident :birddog.process/pid
+   {:db/ident :birddog.probe.process/pid
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.process/user
+   {:db/ident :birddog.probe.process/user
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.process/cmd
+   {:db/ident :birddog.probe.process/cmd
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.process/etimes
+   {:db/ident :birddog.probe.process/etimes
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.process/n-children
+   {:db/ident :birddog.probe.process/n-children
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
    ;; filesystems
-   {:db/ident :birddog.filesystem/size
+   {:db/ident :birddog.probe.filesystem/size
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.filesystem/free
+   {:db/ident :birddog.probe.filesystem/free
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.filesystem/dir
+   {:db/ident :birddog.probe.filesystem/dir
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
@@ -102,7 +102,7 @@
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe/name
+   {:db/ident :birddog.probe/handler    ;ns/var
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
@@ -129,12 +129,12 @@
   (d/transact (d/connect db-uri) [[:add-machine ip]]))
 
 (defn start-probe
-  [machine-id name]
+  [machine-id handler]
   (let [probe-id (d/tempid :db.part/user)]
     (d/transact (d/connect db-uri)
                 [{:db/id probe-id
                   :birddog.probe/started (java.util.Date.)
-                  :birddog.probe/name name}])
+                  :birddog.probe/handler handler}])
     probe-id))
 
 (defn complete-probe

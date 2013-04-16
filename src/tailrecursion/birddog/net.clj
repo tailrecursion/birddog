@@ -8,7 +8,7 @@
         ip)))
 
 (defn port-open? [ip port & {:keys [timeout]
-                             :or {timeout 1000}}]
+                             :or {timeout 100}}]
   {:pre [(ipv4? ip)]}
   (let [sock (java.net.Socket.)]
     (try
@@ -19,7 +19,7 @@
 
 (defn cidr-info [cidr]
   (bean (.getInfo (doto (org.apache.commons.net.util.SubnetUtils. cidr)
-                    (.setInclusiveHostCount true)))))
+                    (.setInclusiveHostCount false)))))
 
 (defn addresses-in [cidr]
   (-> cidr cidr-info :allAddresses set))
