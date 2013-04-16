@@ -20,9 +20,6 @@
   (bean (.getInfo (doto (org.apache.commons.net.util.SubnetUtils. cidr)
                     (.setInclusiveHostCount true)))))
 
-(defn addresses-in [cidr]
-  (-> cidr cidr-info :allAddresses set))
-
 (defn propmap [m]
   (reduce (fn [p [k v]] (doto p (.put k v))) (java.util.Properties.) m))
 
@@ -32,8 +29,8 @@
                     id (str (System/getenv "HOME") "/.ssh/id_rsa")
                     check-host-key false
                     timeout-ms 0}}]
-  (let [jsch    (doto (com.jcraft.jsch.JSch.)
-                  (.addIdentity id))
+  (let [jsch      (doto (com.jcraft.jsch.JSch.)
+                    (.addIdentity id))
         session (doto (.getSession jsch user host port)
                   (.setConfig (propmap {"StrictHostKeyChecking"
                                         (if check-host-key "yes" "no")}))

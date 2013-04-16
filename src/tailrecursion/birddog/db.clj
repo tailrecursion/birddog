@@ -25,45 +25,57 @@
     :db/id #db/id [:db.part/db]
     :db/fn add-machine}
 
+   ;; string => string map support
+   {:db/ident :birddog.pair/key
+    :db/id #db/id [:db.part/db]
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+   {:db/ident :birddog.pair/val
+    :db/id #db/id [:db.part/db]
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+   
    ;; processes
-   {:db/ident :birddog.probe.process/pid
+   {:db/ident :birddog.system..process/pid
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe.process/user
+   {:db/ident :birddog.system.process/user
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe.process/cmd
+   {:db/ident :birddog.system.process/cmd
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe.process/etimes
+   {:db/ident :birddog.system.process/etimes
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe.process/n-children
+   {:db/ident :birddog.system.process/n-children
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
 
    ;; filesystems
-   {:db/ident :birddog.probe.filesystem/size
+   {:db/ident :birddog.system.filesystem/size
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe.filesystem/free
+   {:db/ident :birddog.system.filesystem/free
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe.filesystem/dir
+   {:db/ident :birddog.system.filesystem/dir
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
@@ -103,11 +115,6 @@
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
    {:db/ident :birddog.probe/handler    ;ns/var
-    :db/id #db/id [:db.part/db]
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.probe/value
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
