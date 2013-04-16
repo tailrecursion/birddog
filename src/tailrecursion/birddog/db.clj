@@ -4,19 +4,28 @@
 
 (def db-uri "datomic:mem://birddog")
 
+;;; transactor fns
+
+(def add-machine
+  #db/fn {:lang "clojure"
+          :params [db ip]
+          :code (into []
+                      (when-not (seq (q '[:find ?e
+                                          :in $ ?ip
+                                          :where [?e :birddog.machine/ipv4 ?ip]] db ip))
+                        (let [t (java.util.Date.)]
+                          [{:db/id #db/id [:db.part/user]
+                            :birddog.machine/ipv4 ip
+                            :birddog.machine/discovered t
+                            :birddog.machine/last-probed t}])))})
+
 (def schema
-  [;; targets
-   {:db/ident :birddog.target/ipv4
+  [;; transactor fns
+   {:db/ident :add-machine
+    :db/doc "Add an IP iff it is unknown to us"
     :db/id #db/id [:db.part/db]
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.target/discovered
-    :db/id #db/id [:db.part/db]
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-   
+    :db/fn add-machine}
+
    ;; processes
    {:db/ident :birddog.process/pid
     :db/id #db/id [:db.part/db]
@@ -67,6 +76,11 @@
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
+   {:db/ident :birddog.machine/status
+    :db/id #db/id [:db.part/db]
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db.install/_attribute :db.part/db}
    {:db/ident :birddog.machine/hostname
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/string
@@ -92,14 +106,9 @@
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.machine/last-scanned
+   {:db/ident :birddog.machine/last-probed
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one
-    :db.install/_attribute :db.part/db}
-   {:db/ident :birddog.machine/status
-    :db/id #db/id [:db.part/db]
-    :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
    {:db/ident :birddog.machine/memtotal
@@ -108,6 +117,11 @@
     :db/cardinality :db.cardinality/one
     :db.install/_attribute :db.part/db}
    {:db/ident :birddog.machine/memfree
+    :db/id #db/id [:db.part/db]
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one
+    :db.install/_attribute :db.part/db}
+   {:db/ident :birddog.machine/uptime
     :db/id #db/id [:db.part/db]
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
@@ -157,56 +171,60 @@
   (d/transact (d/connect db-uri) schema)
   (info "Loaded schema"))
 
-(defn add-target
-  [ip]
-  (d/transact (d/connect db-uri)
-              [{:db/id #db/id [:db.part/user]
-                :birddog.target/ipv4 ip
-                :birddog.target/discovered (java.util.Date.)}]))
+;;; targets
 
-(defn rm-target
-  [ip]
-  (let [conn (d/connect db-uri)
-        query '[:find ?e :in $ ?ip :where [?e :birddog.target/ipv4 ?ip]]
-        eid (ffirst (q query (db conn) ip))]
-    (d/transact conn [[:db.fn/retractEntity eid]])))
 
-(defn resmap
-  [db e]
-  (into {} (for [[k v] (d/entity db (first e))]
-             [(keyword (name k)) v])))
+;; (defn resmap
+;;   [db e]
+;;   (into {} (for [[k v] (d/entity db (first e))]
+;;              [(keyword (name k)) v])))
 
-(defn open-targets
-  []
-  (let [conn  (d/connect db-uri)
-        query '[:find ?e :where [?e :birddog.target/ipv4]]
-        db     (db conn)]
-    (mapv (partial resmap db) (q query db))))
+;;; probes
 
-(defn start-probe
-  [ip]
-  (let [probe-id (java.util.UUID/randomUUID)]
-    (d/transact (d/connect db-uri)
-                [{:db/id #db/id [:db.part/user]
-                  :birddog.probe/id probe-id
-                  :birddog.probe/ipv4 ip
-                  :birddog.probe/started (java.util.Date.)}])
-    probe-id))
+;; (defn start-probe!
+;;   [ip]
+;;   (let [probe-id (java.util.UUID/randomUUID)
+;;         conn     (d/connect db-uri)
+;;         db       (db conn)
+;;         target   (ffirst (q '[:find ?e
+;;                               :in $ ?ip
+;;                               :where [?e :birddog.target/ipv4 ?ip]] db ip))]
+;;     (d/transact (d/connect db-uri)
+;;                 [{:db/id #db/id [:db.part/user]
+;;                   :birddog.probe/id probe-id
+;;                   :birddog.probe/ipv4 ip
+;;                   :birddog.probe/started (java.util.Date.)}
+;;                  [:db/retractEntity target]])
+;;     probe-id))
 
-(defn complete-probe
-  [probe-id & [status]]
-  (let [conn (d/connect db-uri)
-        query '[:find ?e :in $ ?uuid :where [?e :birddog.probe/id ?uuid]]
-        eid (ffirst (q query (db conn) probe-id))]
-    (d/transact conn
-                [{:db/id eid
-                  :birddog.probe/completed (java.util.Date.)
-                  :birddog.probe/status (or status "complete")}
-                 [:db/retract eid :birddog.probe/id probe-id]])))
+;; (defn complete-probe!
+;;   [probe-id & [status]]
+;;   (let [conn (d/connect db-uri)
+;;         query '[:find ?e :in $ ?uuid :where [?e :birddog.probe/id ?uuid]]
+;;         eid (ffirst (q query (db conn) probe-id))]
+;;     (d/transact conn
+;;                 [{:db/id eid
+;;                   :birddog.probe/completed (java.util.Date.)
+;;                   :birddog.probe/status (or status "complete")}
+;;                  [:db/retract eid :birddog.probe/id probe-id]])))
 
-(defn pending-probes
-  []
-  (let [conn  (d/connect db-uri)
-        query '[:find ?e :where [?e :birddog.probe/id]]
-        db     (db conn)]
-    (mapv (partial resmap db) (q query db))))
+;; (defn pending-probes
+;;   []
+;;   (let [conn  (d/connect db-uri)
+;;         query '[:find ?e :where [?e :birddog.probe/id]]
+;;         db     (db conn)]
+;;     (mapv (partial resmap db) (q query db))))
+
+
+(comment
+  (d/transact (d/connect db-uri) nil)
+
+  (d/transact (d/connect db-uri) [[:add-machine "1.2.3.4"]])
+
+  (q '[:find ?e :where [?e :birddog.machine/ipv4]] (db (d/connect db-uri)))
+
+  )
+
+(q '[:find ?e
+     :in $ ?ip
+     :where [?e :birddog.machine/ipv4 ?ip]] (db (d/connect db-uri)) "1.2.3.4")
