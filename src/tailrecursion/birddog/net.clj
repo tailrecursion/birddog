@@ -1,9 +1,15 @@
 (ns tailrecursion.birddog.net
   (:require [tailrecursion.birddog.log :refer [info error]]))
 
+(defn ipv4? [ip]
+  (and (string? ip)
+       (.isValidInet4Address
+        (org.apache.commons.validator.routines.InetAddressValidator/getInstance)
+        ip)))
+
 (defn port-open? [ip port & {:keys [timeout]
                              :or {timeout 1000}}]
-  {:pre [(re-matches #"\d+.\d+.\d+.\d+" ip)]}
+  {:pre [(ipv4? ip)]}
   (let [sock (java.net.Socket.)]
     (try
       (boolean (doto (java.net.Socket.)
@@ -27,6 +33,7 @@
                     id (str (System/getenv "HOME") "/.ssh/id_rsa")
                     check-host-key false
                     timeout-ms 0}}]
+  (assert (ipv4? ip))
   (let [jsch    (doto (com.jcraft.jsch.JSch.)
                   (.addIdentity id))
         session (doto (.getSession jsch user host port)
