@@ -7,19 +7,18 @@
         (org.apache.commons.validator.routines.InetAddressValidator/getInstance)
         ip)))
 
-(defn port-open? [ip port & {:keys [timeout]
-                             :or {timeout 100}}]
+(defn port-open? [ip port]
   {:pre [(ipv4? ip)]}
   (let [sock (java.net.Socket.)]
     (try
       (boolean (doto (java.net.Socket.)
-                 (.connect (java.net.InetSocketAddress. ip port) timeout)
+                 (.connect (java.net.InetSocketAddress. ip port))
                  (.close)))
       (catch Throwable t false))))
 
 (defn cidr-info [cidr]
   (bean (.getInfo (doto (org.apache.commons.net.util.SubnetUtils. cidr)
-                    (.setInclusiveHostCount false)))))
+                    (.setInclusiveHostCount true)))))
 
 (defn addresses-in [cidr]
   (-> cidr cidr-info :allAddresses set))

@@ -7,22 +7,21 @@
                                  CountDownLatch)))
 
 (defn fixed-delay-executor [f delay-ms]
-  (doto (ScheduledThreadPoolExecutor. 1)
+  (doto (ScheduledThreadPoolExecutor. 4)
     (.scheduleWithFixedDelay f 0 delay-ms TimeUnit/MILLISECONDS)))
 
 (defn scan-ips
-  [ips]
+  [ips timeout-ms]
   (let [latch (CountDownLatch. (count ips))
         open  (atom 0)
         start-time (System/currentTimeMillis)
         check (fn [ip]
                 (when (net/port-open? ip 22)
                   (swap! open inc)
-                  (info (format "%s:22 open" ip))
                   (paint ip))
                 (.countDown latch))]
     (doseq [agt (map agent ips)] (send-off agt check))
-    (.await latch)                      ;TODO timeout
+    (.await latch timeout-ms TimeUnit/MILLISECONDS)
     (info (format "scanned %s IPs in %s seconds; %s were open."
                   (count ips)
                   (float (/ (- (System/currentTimeMillis) start-time)
@@ -39,5 +38,5 @@
                         (:lowAddress cinfo)
                         (:highAddress cinfo)
                         delay-ms))
-          (scan-ips (:allAddresses cinfo)))
+          (scan-ips (:allAddresses cinfo) delay-ms))
      delay-ms)))

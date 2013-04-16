@@ -3,6 +3,8 @@
             [tailrecursion.birddog.db     :as    db]
             [tailrecursion.birddog.loiter :as loiter]))
 
-(defn -main [& args]
+(defn -main [& cidrs]
   (info "starting")
-  (db/load-schema!))
+  (db/load-schema!)
+  (doseq [cidr cidrs]
+    (loiter/loiter cidr :delay-ms 10000)))
